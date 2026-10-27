@@ -4,6 +4,7 @@ import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.media.MediaPlayer
+import android.net.Uri
 import android.os.Bundle
 import android.os.IBinder
 import android.speech.RecognitionListener
@@ -15,6 +16,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
@@ -93,8 +95,8 @@ class AlwaysOnVoiceService : Service() {
     private suspend fun askGemini(prompt: String, apiKey: String): String = withContext(Dispatchers.IO) {
         val url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
         val jsonBody = JSONObject().apply {
-            put("contents", org.json.JSONArray().put(
-                JSONObject().put("parts", org.json.JSONArray().put(
+            put("contents", JSONArray().put(
+                JSONObject().put("parts", JSONArray().put(
                     JSONObject().put("text", "Ответь кратко, чувственно и по-русски на фразу: $prompt")
                 ))
             ))
