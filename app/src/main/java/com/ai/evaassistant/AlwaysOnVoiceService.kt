@@ -46,9 +46,17 @@ class AlwaysOnVoiceService : Service() {
         recognizer?.setRecognitionListener(object : RecognitionListener {
             override fun onResults(results: Bundle?) {
                 val list = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
-                val phrase = list?.firstOrNull() ?: ""
-                if (phrase.isNotEmpty()) {
-                    processUserPhrase(phrase)
+                val phrase = list?.firstOrNull()?.lowercase() ?: ""
+                
+                // Проверяем, начинается ли фраза со слова "ева"
+                if (phrase.contains("ева") || phrase.startsWith("ев")) {
+                    // Очищаем фразу от обращения и отправляем в ИИ
+                    val cleanPrompt = phrase.replace("ева", "").replace("ев", "").trim()
+                    if (cleanPrompt.isNotEmpty()) {
+                        processUserPhrase(cleanPrompt)
+                    } else {
+                        restartListening()
+                    }
                 } else {
                     restartListening()
                 }
@@ -79,7 +87,7 @@ class AlwaysOnVoiceService : Service() {
                 val answer = if (geminiKey.isNotEmpty()) {
                     askGemini(phrase, geminiKey)
                 } else {
-                    "Пожалуйста, укажите API-ключ Gemini в настройках приложения."
+                    "Пожалуйста, укажите API-ключ Gemini в настройках."
                 }
 
                 if (elevenKey.isNotEmpty()) {
@@ -172,7 +180,7 @@ class AlwaysOnVoiceService : Service() {
 
         val notification = NotificationCompat.Builder(this, channelId)
             .setContentTitle("Ева активна")
-            .setContentText("Слушаю вас и готова отвечать...")
+            .setContentText("Слушаю ключевое слово «Ева»...")
             .setSmallIcon(android.R.drawable.ic_btn_speak_now)
             .setOngoing(true)
             .build()
