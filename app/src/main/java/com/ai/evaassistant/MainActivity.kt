@@ -50,9 +50,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         val geminiBox = input("Вставь Gemini API Key", "gemini_key", "")
-        val openAiBox = input("Вставь OpenAI GPT-4o Key", "openai_key", "")
         val elevenBox = input("Вставь ElevenLabs Key (опционально)", "eleven_key", "")
-        val voiceIdBox = input("Voice ID (по умолч. чувственный женский)", "voice_id", "EXAVITQu4vr4xnSDxMaL")
+        val voiceIdBox = input("Voice ID (по умолч. женский голос)", "voice_id", "EXAVITQu4vr4xnSDxMaL")
 
         val startBtn = Button(this).apply {
             text = "ЗАПУСТИТЬ ЕВУ В ФОНОВОМ РЕЖИМЕ"
@@ -61,11 +60,10 @@ class MainActivity : AppCompatActivity() {
             setOnClickListener {
                 prefs.edit()
                     .putString("gemini_key", geminiBox.text.toString())
-                    .putString("openai_key", openAiBox.text.toString())
                     .putString("eleven_key", elevenBox.text.toString())
                     .putString("voice_id", voiceIdBox.text.toString())
                     .apply()
-                requestAudioAndStart()
+                checkAndStartService()
             }
         }
 
@@ -80,8 +78,6 @@ class MainActivity : AppCompatActivity() {
         root.addView(header)
         root.addView(label("Ключ Google Gemini:"))
         root.addView(geminiBox)
-        root.addView(label("Ключ OpenAI:"))
-        root.addView(openAiBox)
         root.addView(label("Ключ ElevenLabs:"))
         root.addView(elevenBox)
         root.addView(label("ID женского голоса ElevenLabs:"))
@@ -91,20 +87,34 @@ class MainActivity : AppCompatActivity() {
 
         scroll.addView(root)
         setContentView(scroll)
-    }
 
-    private fun requestAudioAndStart() {
+        // Проверяем разрешение на микрофон сразу при открытии
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 100)
+        }
+    }
+
+    private fun checkAndStartService() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 100)
+            Toast.makeText(this, "Дайте разрешение на микрофон!", Toast.LENGTH_LONG).show()
             return
         }
+
         val pm = getSystemService(Context.POWER_SERVICE) as PowerManager
         if (!pm.isIgnoringBatteryOptimizations(packageName)) {
-            startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName")))
+            try {
+                startActivity(Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:$packageName")))
+            } catch (_: Exception) {}
         }
+
         val svc = Intent(this, AlwaysOnVoiceService::class.java)
         stopService(svc)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(svc) else startService(svc)
-        Toast.makeText(this, "Ева запущена! Можешь свернуть приложение.", Toast.LENGTH_LONG).show()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(svc)
+        } else {
+            startService(svc)
+        }
+        Toast.makeText(this, "Ева запущена! Скажите «Ева» и ваш вопрос.", Toast.LENGTH_LONG).show()
     }
 }
