@@ -48,9 +48,7 @@ class AlwaysOnVoiceService : Service() {
                 val list = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 val phrase = list?.firstOrNull()?.lowercase() ?: ""
                 
-                // Проверяем, начинается ли фраза со слова "ева"
                 if (phrase.contains("ева") || phrase.startsWith("ев")) {
-                    // Очищаем фразу от обращения и отправляем в ИИ
                     val cleanPrompt = phrase.replace("ева", "").replace("ев", "").trim()
                     if (cleanPrompt.isNotEmpty()) {
                         processUserPhrase(cleanPrompt)
@@ -81,6 +79,9 @@ class AlwaysOnVoiceService : Service() {
         val geminiKey = prefs.getString("gemini_key", "") ?: ""
         val elevenKey = prefs.getString("eleven_key", "") ?: ""
         val voiceId = prefs.getString("voice_id", "EXAVITQu4vr4xnSDxMaL") ?: "EXAVITQu4vr4xnSDxMaL"
+        
+        val stability = prefs.getString("stability", "0.45")?.toFloatOrNull() ?: 0.45f
+        val style = prefs.getString("style_ex", "0.20")?.toFloatOrNull() ?: 0.20f
 
         serviceScope.launch {
             try {
@@ -91,7 +92,7 @@ class AlwaysOnVoiceService : Service() {
                 }
 
                 if (elevenKey.isNotEmpty()) {
-                    speakWithElevenLabs(answer, elevenKey, voiceId)
+                    speakWithElevenLabs(answer, elevenKey, voiceId, stability, style)
                 }
             } catch (_: Exception) {
             } finally {
@@ -128,11 +129,20 @@ class AlwaysOnVoiceService : Service() {
         }
     }
 
-    private suspend fun speakWithElevenLabs(text: String, apiKey: String, voiceId: String) = withContext(Dispatchers.IO) {
+    private suspend fun speakWithElevenLabs(text: String, apiKey: String, voiceId: String, stability: Float, style: Float) = withContext(Dispatchers.IO) {
         val url = "https://api.elevenlabs.io/v1/text-to-speech/$voiceId"
+        
+        val voiceSettings = JSONObject().apply {
+            put("stability", stability.toDouble())
+            put("similarity_boost", 0.75)
+            put("style", style.toDouble())
+            put("use_speaker_boost", true)
+        }
+
         val jsonBody = JSONObject().apply {
             put("text", text)
             put("model_id", "eleven_multilingual_v2")
+            put("voice_settings", voiceSettings)
         }.toString()
 
         val request = Request.Builder()
