@@ -43,15 +43,19 @@ class MainActivity : AppCompatActivity() {
         }
 
         val header = TextView(this).apply {
-            text = "Ева AI — Голосовой Помощник (RU)"
+            text = "Ева AI — Настройки Голоса"
             textSize = 22f
             setTextColor(Color.parseColor("#FF6EC7"))
             setPadding(0, 0, 0, 20)
         }
 
-        val geminiBox = input("Вставь Gemini API Key", "gemini_key", "")
-        val elevenBox = input("Вставь ElevenLabs Key (опционально)", "eleven_key", "")
-        val voiceIdBox = input("Voice ID (по умолч. женский голос)", "voice_id", "EXAVITQu4vr4xnSDxMaL")
+        val geminiBox = input("Gemini API Key", "gemini_key", "")
+        val elevenBox = input("ElevenLabs Key", "eleven_key", "")
+        val voiceIdBox = input("Voice ID голоса", "voice_id", "EXAVITQu4vr4xnSDxMaL")
+        
+        // Новые поля для настройки эмоций
+        val stabilityBox = input("Стабильность (0.1 - 1.0, по умолч: 0.45)", "stability", "0.45")
+        val styleBox = input("Эмоциональность/Стиль (0.0 - 1.0, по умолч: 0.20)", "style_ex", "0.20")
 
         val startBtn = Button(this).apply {
             text = "ЗАПУСТИТЬ ЕВУ В ФОНОВОМ РЕЖИМЕ"
@@ -62,6 +66,8 @@ class MainActivity : AppCompatActivity() {
                     .putString("gemini_key", geminiBox.text.toString())
                     .putString("eleven_key", elevenBox.text.toString())
                     .putString("voice_id", voiceIdBox.text.toString())
+                    .putString("stability", stabilityBox.text.toString())
+                    .putString("style_ex", styleBox.text.toString())
                     .apply()
                 checkAndStartService()
             }
@@ -82,13 +88,16 @@ class MainActivity : AppCompatActivity() {
         root.addView(elevenBox)
         root.addView(label("ID женского голоса ElevenLabs:"))
         root.addView(voiceIdBox)
+        root.addView(label("Стабильность голоса (Stability):"))
+        root.addView(stabilityBox)
+        root.addView(label("Эмоциональность (Style Exaggeration):"))
+        root.addView(styleBox)
         root.addView(startBtn)
         root.addView(stopBtn)
 
         scroll.addView(root)
         setContentView(scroll)
 
-        // Проверяем разрешение на микрофон сразу при открытии
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO), 100)
         }
@@ -115,6 +124,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             startService(svc)
         }
-        Toast.makeText(this, "Ева запущена! Скажите «Ева» и ваш вопрос.", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "Ева запущена с новыми настройками голоса!", Toast.LENGTH_LONG).show()
     }
 }
